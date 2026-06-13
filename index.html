@@ -242,12 +242,12 @@
                     
                     <div style="padding: 0 15px 10px 15px; display:flex; gap:10px; align-items:center; border-bottom:1px solid var(--border);">
                         <div style="padding: 0 15px 10px 15px; display:flex; gap:10px; align-items:center; border-bottom:1px solid var(--border);">
-    <span id="currentBrushIndicator" style="font-size:12px; font-weight:bold;">Cọ: <span style="color:#94a3b8">Chưa chọn</span></span>
-    
-    <button class="btn-secondary" id="pickerBrushBtn" style="margin-left:auto; background:#06b6d4; color:white; padding:4px 8px; font-size:11px;">✒️ Copy Màu (Picker)</button>
-    
-    <button class="btn-secondary" id="eraserBrushBtn" style="background:#ef4444; color:white; padding:4px 8px; font-size:11px;">🧽 Eraser</button>
-</div>
+                            <span id="currentBrushIndicator" style="font-size:12px; font-weight:bold;">Cọ: <span style="color:#94a3b8">Chưa chọn</span></span>
+                            
+                            <button class="btn-secondary" id="pickerBrushBtn" style="margin-left:auto; background:#06b6d4; color:white; padding:4px 8px; font-size:11px;">✒️ Copy Màu (Picker)</button>
+                            
+                            <button class="btn-secondary" id="eraserBrushBtn" style="background:#ef4444; color:white; padding:4px 8px; font-size:11px;">🧽 Eraser</button>
+                        </div>
                     </div>
                     <div style="max-height: 200px; overflow-y: auto;">
                         <table class="stats-table">
@@ -264,6 +264,12 @@
                         </table>
                     </div>
                 </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header" onclick="togglePanel(this)">Bảng màu đầy đủ <span>▼</span></div>
+                <div class="panel-content" id="fullPaletteGrid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px;">
+                    </div>
             </div>
 
         </div>
@@ -739,6 +745,24 @@ function loadLibraryUI() {
         };
         libraryListContainer.appendChild(div);
     });
+
+
+    function renderFullPalette() {
+            const palette = document.getElementById('fullPaletteGrid');
+            palette.innerHTML = "";
+            BEAD_MAPPING_DICTIONARY.forEach(bead => {
+                let span = document.createElement('span');
+                span.style.cssText = `background:${bead.hex}; width:30px; height:30px; border-radius:4px; cursor:pointer; border:1px solid #ccc;`;
+                span.title = bead.code;
+                span.onclick = () => {
+                    currentSelectedBrush = bead;
+                    currentBrushIndicator.innerHTML = `Cọ: <span class="color-badge" style="background-color:${bead.hex}"></span> <b>[${bead.code}]</b>`;
+                };
+                palette.appendChild(span);
+            });
+        }
+        // Gọi hàm này sau khi trang load xong
+        renderFullPalette();
 }
 
 // Áp dụng dữ liệu Map vào Workspace chính
