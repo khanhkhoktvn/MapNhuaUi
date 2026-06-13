@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Fuse Bead Map Generator - Library Edition</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --background: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--background); color: var(--text);
+            display: flex; height: 100vh; overflow: hidden; position: relative;
+        }
+
+        /* SIDEBAR PANEL BÊN TRÁI */
+        .sidebar {
+            width: 420px; min-width: 420px; background: var(--card);
+            border-right: 1px solid var(--border); display: flex;
+            flex-direction: column; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; z-index: 10; height: 100%;
+        }
+        .sidebar.collapsed { transform: translateX(-420px); }
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 20px; width: 100%; height: 100%; }
+        
+        /* NÚT TOGGLE ĐỨNG ĐỘC LẬP */
+        .sidebar-toggle-btn {
+            position: absolute; right: -40px; top: 20px; width: 40px; height: 40px;
+            background: var(--card); border: 1px solid var(--border); border-left: none;
+            border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; font-weight: bold; font-size: 14px;
+            box-shadow: 4px 0 6px -1px rgba(0,0,0,0.08); z-index: 11; user-select: none;
+        }
+
+        /* COLLAPSIBLE SECTIONS */
+        .collapsible-section {
+            border: 1px solid var(--border); border-radius: 8px; margin-bottom: 15px;
+            overflow: hidden; background: #f8fafc;
+        }
+        .section-header {
+            background: #edf2f7; padding: 12px 15px; font-weight: 700; font-size: 14px;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;
+        }
+        .section-header::after { content: '▼'; font-size: 10px; transition: transform 0.2s; }
+        .collapsible-section.closed .section-header::after { transform: rotate(-90deg); }
+        .section-body { padding: 15px; background: var(--card); display: block; }
+        .collapsible-section.closed .section-body { display: none; }
+
+        /* INPUTS FORM */
+        .control-group { margin-bottom: 12px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; }
+        input[type="number"], input[type="file"], input[type="text"] {
+            width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;
+        }
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+        .checkbox-group input { width: 16px; height: 16px; cursor: pointer; }
+
+        .btn-primary {
+            background: var(--primary); color: white; border: none; padding: 10px 15px;
+            border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%;
+            transition: background 0.15s; margin-top: 5px;
+        }
+        .btn-primary:hover { background: var(--primary-hover); }
+        
+        .btn-secondary {
+            background: #cbd5e1; color: #1e293b; border: none; padding: 8px 12px;
+            border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px; transition: background 0.15s;
+        }
+        .btn-secondary:hover { background: #94a3b8; }
+
+        /* DANH SÁCH THƯ VIỆN & THỐNG KÊ */
+        .stats-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .stats-table th, .stats-table td { border: 1px solid var(--border); padding: 8px; text-align: left; }
+        .stats-table th { background: #f1f5f9; position: sticky; top: 0; }
+        .stats-table tbody tr { cursor: pointer; transition: background 0.1s; }
+        .stats-table tbody tr:hover { background: #f1f5f9; }
+        .stats-table tbody tr.selected-brush { background: #cbd5e1 !important; border: 2px solid var(--primary); }
+        
+        .color-badge {
+            display: inline-block; width: 18px; height: 18px; border-radius: 4px;
+            vertical-align: middle; margin-right: 6px; border: 1px solid #94a3b8;
+        }
+        .code-tag {
+            background: #e2e8f0; padding: 2px 5px; border-radius: 4px;
+            font-family: monospace; font-size: 11px; font-weight: bold;
+        }
+
+        /* DÒNG ITEM TRONG THƯ VIỆN */
+        .library-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding: 5px 0; }
+        .library-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 12px; background: #f8fafc; border: 1px solid var(--border); border-radius: 6px;
+        }
+        .library-item-info { font-size: 13px; font-weight: 600; cursor: pointer; flex: 1; }
+        .library-item-actions { display: flex; gap: 5px; }
+
+        /* WORKSPACE BÊN PHẢI */
+        .workspace {
+            flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; align-items: center; gap: 25px; height: 100%;
+        }
+        .view-card {
+            background: var(--card); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            padding: 20px; width: 100%; max-width: 850px; display: flex; flex-direction: column;
+        }
+        .view-card h3 {
+            margin-bottom: 12px; font-size: 16px; border-bottom: 2px solid var(--primary); padding-bottom: 4px; display: inline-block; align-self: flex-start;
+        }
+
+        .zoom-control-bar {
+            display: flex; align-items: center; gap: 15px; background: #f8fafc; padding: 8px 15px; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--border);
+        }
+        .zoom-control-bar label { margin-bottom: 0; font-weight: bold; font-size: 12px; white-space: nowrap; }
+        .zoom-control-bar input[type="range"] { flex: 1; cursor: pointer; }
+        .zoom-val { font-family: monospace; font-size: 12px; font-weight: bold; width: 45px; text-align: right; }
+
+        .canvas-container {
+            width: 100%; height: 450px; overflow: auto; border: 1px dashed #cbd5e1; background: #cbd5e1; border-radius: 6px; padding: 150px; position: relative;
+        }
+        .zoom-target { transform-origin: top left; transition: transform 0.1s ease-out; display: inline-block; }
+
+        #editorWrapper { position: relative; display: inline-block; }
+        #sourceImage { display: block; max-width: 600px; height: auto; user-select: none; -webkit-user-drag: none; }
+        #interactionCanvas { position: absolute; top: 0; left: 0; cursor: move; }
+        #outputMapCanvas { display: block; background: #ffffff; cursor: crosshair; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar" id="sidebarPanel">
+        <button class="sidebar-toggle-btn" id="sidebarToggle" title="Ẩn/Hiện bảng cấu hình">◀</button>
+        
+        <div class="sidebar-content">
+            <h2 style="font-size: 18px; margin-bottom: 15px; text-align: center;">Bead Map Config 🎯</h2>
+
+            <div class="collapsible-section">
+                <div class="section-header">4. Thư viện lưu trữ (Library)</div>
+                <div class="section-body">
+                    <div class="control-group" style="display: flex; gap: 8px; border-bottom: 1px dashed var(--border); padding-bottom: 12px;">
+                        <input type="text" id="saveMapNameInput" placeholder="Nhập tên Map muốn lưu...">
+                        <button class="btn-secondary" id="saveLocalBtn" style="background: var(--primary); color:white; white-space: nowrap;">💾 Lưu Local</button>
+                    </div>
+                    <div class="control-group" style="margin-top: 8px;">
+    <button class="btn-primary" id="syncToSheetBtn" style="background: #16a34a;">🔄 Đồng bộ (Sync) trực tiếp lên Google Sheet</button>
+</div>
+                    <div class="control-group" style="padding-top: 4px;">
+                        <label>Import từ Google Sheets (.csv):</label>
+                        <input type="file" id="csvFileLoader" accept=".csv">
+                    </div>
+                    
+                    <label style="margin-top: 10px; color: var(--primary);">Danh sách Map đã lưu trữ:</label>
+                    <div class="library-list" id="libraryListContainer">
+                        </div>
+                </div>
+            </div>
+
+            <div class="collapsible-section closed">
+                <div class="section-header">Quản lý File Backup (JSON)</div>
+                <div class="section-body">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button class="btn-secondary" id="exportDataBtn" style="background:#22c55e; color:white;">📤 EXPORT JSON</button>
+                        <button class="btn-secondary" onclick="document.getElementById('importFileLoader').click()" style="background:#3b82f6; color:white;">📥 IMPORT JSON</button>
+                    </div>
+                    <input type="file" id="importFileLoader" accept=".json" style="display:none;">
+                </div>
+            </div>
+
+            <div class="collapsible-section">
+                <div class="section-header">1. Chọn hình ảnh</div>
+                <div class="section-body">
+                    <div class="control-group">
+                        <input type="file" id="imageLoader" accept="image/*">
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapsible-section">
+                <div class="section-header">2. Cấu hình lưới hạt & Vị trí</div>
+                <div class="section-body">
+                    <div class="grid-inputs control-group">
+                        <div>
+                            <label for="gridCols">Số hạt Ngang:</label>
+                            <input type="number" id="gridCols" value="45" min="5" max="150">
+                        </div>
+                        <div>
+                            <label for="gridRows">Số hạt Dọc:</label>
+                            <input type="number" id="gridRows" value="45" min="5" max="150">
+                        </div>
+                    </div>
+                    
+                    <div class="grid-inputs control-group">
+                        <div>
+                            <label for="gridColor">Màu chỉ định vị:</label>
+                            <input type="color" id="gridColor" value="#00FF44" style="height:35px; padding:0; cursor:pointer;">
+                        </div>
+                        <div>
+                            <label for="gridThickness">Độ dày lưới (px):</label>
+                            <input type="number" id="gridThickness" value="2" min="1" max="5">
+                        </div>
+                    </div>
+
+                    <h4 style="font-size: 13px; margin: 15px 0 6px 0; color: var(--primary);">Tọa độ khung lưới:</h4>
+                    <div class="grid-inputs control-group">
+                        <div>
+                            <label for="boxX">Vị trí X (Trái):</label>
+                            <input type="number" id="boxX" value="40">
+                        </div>
+                        <div>
+                            <label for="boxY">Vị trí Y (Trên):</label>
+                            <input type="number" id="boxY" value="40">
+                        </div>
+                    </div>
+                    <div class="grid-inputs control-group">
+                        <div>
+                            <label for="boxW">Độ rộng Rộng (W):</label>
+                            <input type="number" id="boxW" value="250">
+                        </div>
+                        <div>
+                            <label for="boxH">Độ rộng Cao (H):</label>
+                            <input type="number" id="boxH" value="250">
+                        </div>
+                    </div>
+
+                    <div class="checkbox-group control-group">
+                        <input type="checkbox" id="showCodesToggle">
+                        <label for="showCodesToggle" style="margin-bottom:0; cursor:pointer;"><b>Hiện mã ký hiệu hạt lên Map</b></label>
+                    </div>
+                    <button class="btn-primary" id="generateMapBtn" style="margin-top:10px;">💥 TRÍCH XUẤT PIXEL MAP</button>
+                </div>
+            </div>
+
+            <div class="collapsible-section">
+                <div class="section-header">3. Thống kê & Chọn màu vẽ lại</div>
+                <div class="section-body" style="padding: 10px 0 0 0;">
+                    
+                    <div style="padding: 0 15px 10px 15px; display:flex; gap:10px; align-items:center; border-bottom:1px solid var(--border);">
+                        <div style="padding: 0 15px 10px 15px; display:flex; gap:10px; align-items:center; border-bottom:1px solid var(--border);">
+    <span id="currentBrushIndicator" style="font-size:12px; font-weight:bold;">Cọ: <span style="color:#94a3b8">Chưa chọn</span></span>
+    
+    <button class="btn-secondary" id="pickerBrushBtn" style="margin-left:auto; background:#06b6d4; color:white; padding:4px 8px; font-size:11px;">✒️ Copy Màu (Picker)</button>
+    
+    <button class="btn-secondary" id="eraserBrushBtn" style="background:#ef4444; color:white; padding:4px 8px; font-size:11px;">🧽 Eraser</button>
+</div>
+                    </div>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Màu sắc</th>
+                                    <th>Mã</th>
+                                    <th>Số lượng</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shoppingList">
+                                <tr><td colspan="3" style="text-align: center; color: #94a3b8; padding: 15px;">Chưa có dữ liệu map.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="view-card">
+            <h3>Sơ đồ Pixel (Map thành phẩm) <span style="font-size:12px; color:#64748b; font-weight:normal;">- Click/Rê chuột để sửa màu</span></h3>
+            <div class="zoom-control-bar">
+                <label for="mapZoom">Thu phóng Map:</label>
+                <input type="range" id="mapZoom" min="10" max="300" value="100">
+                <span class="zoom-val" id="mapZoomVal">100%</span>
+            </div>
+            <div class="canvas-container">
+                <div class="zoom-target" id="mapZoomWrapper">
+                    <canvas id="outputMapCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="view-card">
+            <h3>Vùng chọn & Căn chỉnh lưới trên ảnh gốc</h3>
+            <div class="zoom-control-bar">
+                <label for="editorZoom">Thu phóng Ảnh gốc:</label>
+                <input type="range" id="editorZoom" min="10" max="300" value="100">
+                <span class="zoom-val" id="editorZoomVal">100%</span>
+            </div>
+            <div class="canvas-container">
+                <div class="zoom-target" id="editorZoomWrapper">
+                    <div id="editorWrapper">
+                        <img id="sourceImage" alt="Vui lòng tải ảnh lên hoặc load từ thư viện...">
+                        <canvas id="interactionCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const BEAD_MAPPING_DICTIONARY = [
+    { code: "A4", hex: "#EAD67E" }, { code: "B3", hex: "#2E5E4E" }, { code: "C3", hex: "#6F9BB4" },
+    { code: "D9", hex: "#DFB6D5" }, { code: "E2", hex: "#EEA6BF" }, { code: "G1", hex: "#DDD7CE" },
+    { code: "B5", hex: "#4C8C57" }, { code: "C5", hex: "#1997AB" }, { code: "D6", hex: "#7E8CB4" },
+    { code: "E4", hex: "#EE8AA2" }, { code: "G5", hex: "#C79C81" }, { code: "A6", hex: "#E9B064" },
+    { code: "B8", hex: "#166442" }, { code: "C8", hex: "#006282" }, { code: "D7", hex: "#464A80" },
+    { code: "F5", hex: "#BF1120" }, { code: "G7", hex: "#AE7455" }, { code: "A7", hex: "#D68D50" },
+    { code: "H1", hex: "#1A1A1A" }, { code: "H2", hex: "#565656" }, { code: "H3", hex: "#979797" },
+    { code: "H4", hex: "#C2C2C2" }, { code: "H5", hex: "#E1E1E1" }, { code: "H7", hex: "#0D0D0D" },
+    { code: "F1", hex: "#E85C2B" }, { code: "F2", hex: "#E53929" }, { code: "F3", hex: "#BE1622" },
+    { code: "F4", hex: "#A6101E" }, { code: "F6", hex: "#85121B" }, { code: "F9", hex: "#F26E8C" },
+    { code: "E6", hex: "#E54F84" }, { code: "E9", hex: "#EE98BF" }, { code: "E10", hex: "#C63E7B" },
+    { code: "E12", hex: "#D51F5F" }, { code: "D5", hex: "#78448E" }, { code: "M5", hex: "#DDD6C7" },
+    { code: "M6", hex: "#C4BAAA" }, { code: "M9", hex: "#A89C89" }, { code: "M12", hex: "#7B6F5F" },
+    { code: "G6", hex: "#C37346" }, { code: "A9", hex: "#E09C2A" }, { code: "A12", hex: "#EAA83B" },
+    { code: "A8", hex: "#E4BA33" }, { code: "A5", hex: "#EFC83A" }, { code: "A15", hex: "#F3E246" },
+    { code: "B11", hex: "#234127" }, { code: "B4", hex: "#3A9F53" }, { code: "B2", hex: "#52B74B" },
+    { code: "B1", hex: "#88C542" }, { code: "B13", hex: "#A6D57A" }, { code: "A1", hex: "#D6E59A" },
+    { code: "B15", hex: "#196B3E" }, { code: "C15", hex: "#009193" }, { code: "B6", hex: "#35B38B" },
+    { code: "B16", hex: "#70C6A5" }, { code: "C1", hex: "#A6D5CD" }, { code: "H12", hex: "#D2E2DC" },
+    { code: "C9", hex: "#15335A" }, { code: "C17", hex: "#2E91C1" }, { code: "C4", hex: "#63B8DC" },
+    { code: "D1", hex: "#95B9DF" }, { code: "D17", hex: "#617CB4" }, { code: "C14", hex: "#A1C9D9" },
+    { code: "WHITE", hex: "#FFFFFF" }, { code: "BLACK", hex: "#000000" }
+];
+
+let imgElement = document.getElementById('sourceImage');
+let interCanvas = document.getElementById('interactionCanvas');
+let interCtx = interCanvas.getContext('2d');
+let outputCanvas = document.getElementById('outputMapCanvas');
+let outputCtx = outputCanvas.getContext('2d');
+
+let originalImage = null, pixelGrid = [], savedImageSrc = null;      
+let gridBox = { x: 40, y: 40, w: 250, h: 250 };
+let isDragging = false, isResizing = false, dragStart = { x: 0, y: 0 };
+let resizeHandleSize = 14, currentSelectedBrush = null, isDrawingOnMap = false;
+let mapCellSizeScale = 24;
+
+// DOM Controls
+const gridColsInput = document.getElementById('gridCols'), gridRowsInput = document.getElementById('gridRows');
+const gridColorInput = document.getElementById('gridColor'), gridThicknessInput = document.getElementById('gridThickness');
+const showCodesToggle = document.getElementById('showCodesToggle'), generateMapBtn = document.getElementById('generateMapBtn');
+const shoppingListBody = document.getElementById('shoppingList'), currentBrushIndicator = document.getElementById('currentBrushIndicator'), eraserBrushBtn = document.getElementById('eraserBrushBtn');
+const boxXInput = document.getElementById('boxX'), boxYInput = document.getElementById('boxY'), boxWInput = document.getElementById('boxW'), boxHInput = document.getElementById('boxH');
+const mapZoomInput = document.getElementById('mapZoom'), mapZoomVal = document.getElementById('mapZoomVal'), mapZoomWrapper = document.getElementById('mapZoomWrapper');
+const editorZoomInput = document.getElementById('editorZoom'), editorZoomVal = document.getElementById('editorZoomVal'), editorZoomWrapper = document.getElementById('editorZoomWrapper');
+const saveMapNameInput = document.getElementById('saveMapNameInput'), libraryListContainer = document.getElementById('libraryListContainer');
+const pickerBrushBtn = document.getElementById('pickerBrushBtn');
+
+// ZOOM EVENTS
+mapZoomInput.oninput = function() { mapZoomVal.innerText = this.value + "%"; mapZoomWrapper.style.transform = `scale(${this.value / 100})`; };
+editorZoomInput.oninput = function() { editorZoomVal.innerText = this.value + "%"; editorZoomWrapper.style.transform = `scale(${this.value / 100})`; };
+
+// SIDEBAR TOGGLE
+const sidebarPanel = document.getElementById('sidebarPanel'), sidebarToggle = document.getElementById('sidebarToggle');
+sidebarToggle.onclick = () => { sidebarPanel.classList.toggle('collapsed'); sidebarToggle.innerText = sidebarPanel.classList.contains('collapsed') ? "▶" : "◀"; };
+document.querySelectorAll('.section-header').forEach(h => h.onclick = () => h.parentElement.classList.toggle('closed'));
+
+pickerBrushBtn.onclick = function() {
+    document.querySelectorAll('#shoppingList tr').forEach(r => r.classList.remove('selected-brush'));
+    currentSelectedBrush = "PICKER"; 
+    currentBrushIndicator.innerHTML = `Cọ: <span style="color:#06b6d4; font-weight:bold;">✒️ Đang chế độ Hút màu...</span>`;
+};
+
+eraserBrushBtn.onclick = function() {
+    document.querySelectorAll('#shoppingList tr').forEach(r => r.classList.remove('selected-brush'));
+    currentSelectedBrush = "ERASER"; currentBrushIndicator.innerHTML = `Cọ: <span style="color:#ef4444; font-weight:bold;">🧽 Eraser</span>`;
+};
+
+// LOAD IMAGE FILE
+document.getElementById('imageLoader').onchange = function(e) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        savedImageSrc = event.target.result;
+        originalImage = new Image();
+        originalImage.onload = () => { imgElement.src = savedImageSrc; }
+        originalImage.src = savedImageSrc;
+    }
+    reader.readAsDataURL(e.target.files[0]);
+};
+
+imgElement.onload = function() {
+    interCanvas.width = imgElement.clientWidth; interCanvas.height = imgElement.clientHeight;
+    if(gridBox.w === 250 && gridBox.h === 250) { // Nếu chưa có cấu hình cụ thể từ import
+        let size = Math.min(interCanvas.width, interCanvas.height) * 0.7;
+        gridBox = { x: Math.round((interCanvas.width - size) / 2), y: Math.round((interCanvas.height - size) / 2), w: Math.round(size), h: Math.round(size) };
+        let ratio = originalImage.height / originalImage.width;
+        gridRowsInput.value = Math.round(parseInt(gridColsInput.value) * ratio);
+    }
+    updateInputsFromBox(); drawInteractionGrid();
+};
+
+function updateInputsFromBox() {
+    boxXInput.value = Math.round(gridBox.x); boxYInput.value = Math.round(gridBox.y);
+    boxWInput.value = Math.round(gridBox.w); boxHInput.value = Math.round(gridBox.h);
+}
+function updateBoxFromInputs() {
+    gridBox.x = parseInt(boxXInput.value) || 0; gridBox.y = parseInt(boxYInput.value) || 0;
+    gridBox.w = parseInt(boxWInput.value) || 50; gridBox.h = parseInt(boxHInput.value) || 50;
+    drawInteractionGrid();
+}
+
+boxXInput.oninput = updateBoxFromInputs; boxYInput.oninput = updateBoxFromInputs;
+boxWInput.oninput = updateBoxFromInputs; boxHInput.oninput = updateBoxFromInputs;
+gridColsInput.oninput = drawInteractionGrid; gridRowsInput.oninput = drawInteractionGrid;
+gridColorInput.oninput = drawInteractionGrid; gridThicknessInput.oninput = drawInteractionGrid;
+showCodesToggle.onchange = () => { if(pixelGrid.length > 0) renderOutputMap(parseInt(gridColsInput.value), parseInt(gridRowsInput.value)); };
+
+function drawInteractionGrid() {
+    if (!originalImage) return;
+    interCtx.clearRect(0, 0, interCanvas.width, interCanvas.height);
+    let cols = parseInt(gridColsInput.value) || 30, rows = parseInt(gridRowsInput.value) || 30, color = gridColorInput.value, thick = parseInt(gridThicknessInput.value) || 2;
+
+    interCtx.fillStyle = "rgba(0, 0, 0, 0.35)";
+    interCtx.fillRect(0, 0, interCanvas.width, Math.max(0, gridBox.y));
+    interCtx.fillRect(0, Math.max(0, gridBox.y + gridBox.h), interCanvas.width, interCanvas.height);
+    interCtx.fillRect(0, Math.max(0, gridBox.y), Math.max(0, gridBox.x), Math.min(interCanvas.height, gridBox.h));
+    interCtx.fillRect(Math.max(0, gridBox.x + gridBox.w), Math.max(0, gridBox.y), interCanvas.width, Math.min(interCanvas.height, gridBox.h));
+
+    interCtx.strokeStyle = color + "55"; interCtx.lineWidth = 1;
+    let cellW = gridBox.w / cols, cellH = gridBox.h / rows;
+    for(let i = 1; i < cols; i++) { interCtx.beginPath(); interCtx.moveTo(gridBox.x + i * cellW, gridBox.y); interCtx.lineTo(gridBox.x + i * cellW, gridBox.y + gridBox.h); interCtx.stroke(); }
+    for(let j = 1; j < rows; j++) { interCtx.beginPath(); interCtx.moveTo(gridBox.x, gridBox.y + j * cellH); interCtx.lineTo(gridBox.x + gridBox.w, gridBox.y + j * cellH); interCtx.stroke(); }
+
+    interCtx.strokeStyle = color; interCtx.lineWidth = thick; interCtx.strokeRect(gridBox.x, gridBox.y, gridBox.w, gridBox.h);
+    interCtx.fillStyle = color; interCtx.fillRect(gridBox.x + gridBox.w - resizeHandleSize/2, gridBox.y + gridBox.h - resizeHandleSize/2, resizeHandleSize, resizeHandleSize);
+}
+
+// DRAG/RESIZE CHUỘT TRÊN ẢNH GỐC
+interCanvas.addEventListener('mousedown', function(e) {
+    let rect = interCanvas.getBoundingClientRect(), currentZoom = (parseInt(editorZoomInput.value) || 100) / 100;
+    let mX = (e.clientX - rect.left) / currentZoom, mY = (e.clientY - rect.top) / currentZoom, hX = gridBox.x + gridBox.w, hY = gridBox.y + gridBox.h;
+    if (mX >= hX - (resizeHandleSize / currentZoom) && mX <= hX + (resizeHandleSize / currentZoom) && mY >= hY - (resizeHandleSize / currentZoom) && mY <= hY + (resizeHandleSize / currentZoom)) { isResizing = true; } 
+    else { isDragging = true; dragStart.x = mX - gridBox.x; dragStart.y = mY - gridBox.y; }
+});
+interCanvas.addEventListener('mousemove', function(e) {
+    if (!isDragging && !isResizing) return;
+    let rect = interCanvas.getBoundingClientRect(), currentZoom = (parseInt(editorZoomInput.value) || 100) / 100;
+    let mX = (e.clientX - rect.left) / currentZoom, mY = (e.clientY - rect.top) / currentZoom;
+    if (isResizing) { gridBox.w = mX - gridBox.x; gridBox.h = mY - gridBox.y; } 
+    else if (isDragging) { gridBox.x = mX - dragStart.x; gridBox.y = mY - dragStart.y; }
+    updateInputsFromBox(); drawInteractionGrid();
+});
+
+// LOGIC TÔ MÀU TRÊN MAP CANVAS
+function handleMapDrawing(e) {
+    if(!pixelGrid || pixelGrid.length === 0 || !currentSelectedBrush) return;
+    
+    let rect = outputCanvas.getBoundingClientRect(), currentZoom = (parseInt(mapZoomInput.value) || 100) / 100;
+    let mX = (e.clientX - rect.left) / currentZoom, mY = (e.clientY - rect.top) / currentZoom;
+    let cols = parseInt(gridColsInput.value), rows = parseInt(gridRowsInput.value);
+    let cellC = Math.floor(mX / mapCellSizeScale), cellR = Math.floor(mY / mapCellSizeScale);
+    
+    if(cellC >= 0 && cellC < cols && cellR >= 0 && cellR < rows) {
+        let index = cellR * cols + cellC;
+        
+        // --- ĐOẠN LOGIC MỚI CHÈN VÀO ĐÂY ---
+        if (currentSelectedBrush === "PICKER") {
+            let clickedBead = pixelGrid[index];
+            if (clickedBead) {
+                // Đổi cọ hiện tại thành chính màu vừa hút được
+                currentSelectedBrush = { code: clickedBead.code, hex: clickedBead.hex };
+                currentBrushIndicator.innerHTML = `Cọ: <span class="color-badge" style="background-color:${clickedBead.hex}"></span> <b>[${clickedBead.code}]</b>`;
+                
+                // Active dòng tương ứng dưới bảng thống kê cho đồng bộ trực quan
+                document.querySelectorAll('#shoppingList tr').forEach(r => {
+                    r.classList.remove('selected-brush');
+                    if (r.dataset.code === clickedBead.code) r.classList.add('selected-brush');
+                });
+            } else {
+                // Nếu click vào ô trống/trong suốt thì tự động chuyển sang cọ xóa luôn
+                eraserBrushBtn.click();
+            }
+            return; // Thoát hàm luôn, không chạy xuống phần vẽ đè phía dưới
+        }
+        // -------------------------------------
+
+        // Phía dưới này là logic cũ của bạn (Xóa ô hoặc Tô màu đè lên)
+        pixelGrid[index] = (currentSelectedBrush === "ERASER") ? null : currentSelectedBrush;
+        renderOutputMap(cols, rows); 
+        renderShoppingListOnly();
+    }
+}
+outputCanvas.addEventListener('mousedown', (e) => { isDrawingOnMap = true; handleMapDrawing(e); });
+outputCanvas.addEventListener('mousemove', (e) => { if(isDrawingOnMap) handleMapDrawing(e); });
+window.addEventListener('mouseup', () => { isDragging = false; isResizing = false; isDrawingOnMap = false; });
+
+function findClosestBead(r, g, b) {
+    let minDistance = Infinity, closestBead = BEAD_MAPPING_DICTIONARY[BEAD_MAPPING_DICTIONARY.length - 1];
+    for (let bead of BEAD_MAPPING_DICTIONARY) {
+        let rgb = hexToRgb(bead.hex); if (!rgb) continue;
+        let d = Math.sqrt(Math.pow(r - rgb.r, 2) + Math.pow(g - rgb.g, 2) + Math.pow(b - rgb.b, 2));
+        if (d < minDistance) { minDistance = d; closestBead = bead; }
+    }
+    return closestBead;
+}
+
+// BẤM QUÉT MAP
+generateMapBtn.onclick = function() {
+    if (!originalImage) { alert("Vui lòng tải ảnh lên trước!"); return; }
+    let cols = parseInt(gridColsInput.value) || 30, rows = parseInt(gridRowsInput.value) || 30;
+    let sampleCanvas = document.createElement('canvas'); sampleCanvas.width = originalImage.width; sampleCanvas.height = originalImage.height;
+    let sampleCtx = sampleCanvas.getContext('2d'); sampleCtx.drawImage(originalImage, 0, 0);
+    let scaleX = originalImage.width / imgElement.clientWidth, scaleY = originalImage.height / imgElement.clientHeight;
+    let cellW = (gridBox.w * scaleX) / cols, cellH = (gridBox.h * scaleY) / rows;
+    pixelGrid = [];
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            let sX = (gridBox.x * scaleX) + (c + 0.5) * cellW; let sY = (gridBox.y * scaleY) + (r + 0.5) * cellH;
+            if (sX < 0 || sX >= originalImage.width || sY < 0 || sY >= originalImage.height) { pixelGrid.push(null); } 
+            else {
+                let p = sampleCtx.getImageData(Math.floor(sX), Math.floor(sY), 1, 1).data;
+                if (p[3] < 128 || (p[0] > 250 && p[1] > 250 && p[2] > 250)) { pixelGrid.push(null); } 
+                else { pixelGrid.push(findClosestBead(p[0], p[1], p[2])); }
+            }
+        }
+    }
+    renderOutputMap(cols, rows); renderShoppingListTableBuild();
+};
+
+function renderOutputMap(cols, rows) {
+    outputCanvas.width = cols * mapCellSizeScale; outputCanvas.height = rows * mapCellSizeScale;
+    outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+    let showCodes = showCodesToggle.checked;
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            let bead = pixelGrid[r * cols + c], x = c * mapCellSizeScale, y = r * mapCellSizeScale;
+            if (bead) {
+                outputCtx.fillStyle = bead.hex; outputCtx.fillRect(x, y, mapCellSizeScale, mapCellSizeScale);
+                if (showCodes) {
+                    outputCtx.font = "bold 9px monospace"; let rgb = hexToRgb(bead.hex), brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+                    outputCtx.fillStyle = brightness > 125 ? "#000000" : "#FFFFFF"; outputCtx.textAlign = "center"; outputCtx.textBaseline = "middle";
+                    outputCtx.fillText(bead.code, x + mapCellSizeScale/2, y + mapCellSizeScale/2);
+                }
+            } else { outputCtx.fillStyle = "#ffffff"; outputCtx.fillRect(x, y, mapCellSizeScale, mapCellSizeScale); }
+            outputCtx.strokeStyle = "rgba(0, 0, 0, 0.15)"; outputCtx.lineWidth = 0.5; outputCtx.strokeRect(x, y, mapCellSizeScale, mapCellSizeScale);
+        }
+    }
+}
+
+function renderShoppingListTableBuild() {
+    let counts = {};
+    pixelGrid.forEach(bead => { if (bead) counts[bead.code] = counts[bead.code] ? { ...bead, count: counts[bead.code].count + 1 } : { ...bead, count: 1 }; });
+    shoppingListBody.innerHTML = ""; let sortedKeys = Object.keys(counts).sort((a,b) => counts[b].count - counts[a].count);
+    if(sortedKeys.length === 0) { shoppingListBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: #94a3b8; padding: 15px;">Chưa có dữ liệu map.</td></tr>`; return; }
+    sortedKeys.forEach(key => {
+        let item = counts[key], row = document.createElement('tr');
+        row.dataset.code = item.code; row.dataset.hex = item.hex;
+        row.innerHTML = `<td><span class="color-badge" style="background-color:${item.hex}"></span>${item.hex}</td><td><span class="code-tag">${item.code}</span></td><td style="font-weight:bold; color:var(--primary);" id="count-tag-${item.code}">${item.count} hạt</td>`;
+        row.onclick = function() {
+            document.querySelectorAll('#shoppingList tr').forEach(r => r.classList.remove('selected-brush')); this.classList.add('selected-brush');
+            currentSelectedBrush = { code: this.dataset.code, hex: this.dataset.hex };
+            currentBrushIndicator.innerHTML = `Cọ: <span class="color-badge" style="background-color:${item.hex}"></span> <b>[${item.code}]</b>`;
+        };
+        shoppingListBody.appendChild(row);
+    });
+}
+function renderShoppingListOnly() {
+    let counts = {}; BEAD_MAPPING_DICTIONARY.forEach(b => counts[b.code] = 0);
+    pixelGrid.forEach(bead => { if (bead) counts[bead.code]++; });
+    Object.keys(counts).forEach(code => { let tag = document.getElementById(`count-tag-${code}`); if(tag) tag.innerText = counts[code] + " hạt"; });
+}
+
+// =================== LOGIC THƯ VIỆN LƯU TRỮ (MỚI THÊM) ===================
+
+// Tải danh sách thư viện lên giao diện
+function loadLibraryUI() {
+    libraryListContainer.innerHTML = "";
+    let library = JSON.parse(localStorage.getItem('bead_maps_library')) || {};
+    let keys = Object.keys(library);
+    
+    if(keys.length === 0) {
+        libraryListContainer.innerHTML = `<div style="text-align:center; color:#94a3b8; font-size:12px; padding:10px;">Thư viện trống.</div>`;
+        return;
+    }
+    
+    keys.forEach(name => {
+        let item = library[name];
+        let div = document.createElement('div');
+        div.className = "library-item";
+        div.innerHTML = `
+            <div class="library-item-info" title="Click để kích hoạt Map này">${name} <span style="font-weight:normal; font-size:11px; color:#64748b;">(${item.gridCols}x${item.gridRows})</span></div>
+            <div class="library-item-actions">
+                <button class="btn-secondary" style="background:#ef4444; color:white; padding:2px 6px; font-size:11px;" data-name="${name}">Xóa</button>
+            </div>
+        `;
+        
+        // Kích hoạt map khi click vào tên
+        div.querySelector('.library-item-info').onclick = function() {
+            applyMapDataToWorkspace(item);
+            alert(`Đã khôi phục Map: "${name}" từ Thư viện!`);
+        };
+        
+        // Xóa map
+        div.querySelector('button').onclick = function(e) {
+            e.stopPropagation();
+            if(confirm(`Bạn có chắc muốn xóa map "${name}" khỏi thư viện local?`)) {
+                delete library[name];
+                localStorage.setItem('bead_maps_library', JSON.stringify(library));
+                loadLibraryUI();
+            }
+        };
+        libraryListContainer.appendChild(div);
+    });
+}
+
+// Áp dụng dữ liệu Map vào Workspace chính
+function applyMapDataToWorkspace(data) {
+    gridColsInput.value = data.gridCols;
+    gridRowsInput.value = data.gridRows;
+    gridBox = data.gridBox;
+    pixelGrid = data.pixelGrid;
+    savedImageSrc = data.savedImageSrc || null;
+    
+    updateInputsFromBox();
+    
+    if(savedImageSrc) {
+        originalImage = new Image();
+        originalImage.onload = () => {
+            imgElement.src = savedImageSrc;
+            drawInteractionGrid();
+            renderOutputMap(data.gridCols, data.gridRows);
+            renderShoppingListTableBuild();
+        };
+        originalImage.src = savedImageSrc;
+    } else {
+        imgElement.src = "";
+        interCtx.clearRect(0, 0, interCanvas.width, interCanvas.height);
+        renderOutputMap(data.gridCols, data.gridRows);
+        renderShoppingListTableBuild();
+    }
+}
+
+// Event: Bấm nút lưu Map Local
+document.getElementById('saveLocalBtn').onclick = function() {
+    let name = saveMapNameInput.value.trim();
+    if(!name) { alert("Vui lòng nhập tên tác phẩm trước khi lưu!"); return; }
+    if(!pixelGrid || pixelGrid.length === 0) { alert("Không có dữ liệu Map để lưu!"); return; }
+    
+    let library = JSON.parse(localStorage.getItem('bead_maps_library')) || {};
+    
+    library[name] = {
+        gridCols: parseInt(gridColsInput.value),
+        gridRows: parseInt(gridRowsInput.value),
+        gridBox: gridBox,
+        pixelGrid: pixelGrid,
+        savedImageSrc: savedImageSrc // Lưu kèm cả base64 ảnh gốc
+    };
+    
+    localStorage.setItem('bead_maps_library', JSON.stringify(library));
+    saveMapNameInput.value = "";
+    loadLibraryUI();
+    alert(`Đã lưu "${name}" vào thư viện local thành công!`);
+};
+
+// =================== PARSE FILE CSV GOOGLE SHEET ===================
+document.getElementById('csvFileLoader').onchange = function(e) {
+    let file = e.target.files[0];
+    if (!file) return;
+    
+    let reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            let text = event.target.result;
+            let lines = text.split(/\r?\n/);
+            let csvData = {};
+            
+            lines.forEach(line => {
+                // Tách cột theo dấu phẩy, xử lý dấu ngoặc kép nếu có dữ liệu mảng phức tạp
+                let match = line.match(/^"?([^",]+)"?,?["']?(.*?)["']?$/);
+                if (match) {
+                    let key = match[1].trim();
+                    let val = match[2].trim().replace(/^"|"$/g, ''); // Bỏ dấu nháy bọc ngoài cùng
+                    csvData[key] = val;
+                }
+            });
+            
+            if(!csvData.gridCols || !csvData.pixelGrid) {
+                alert("File CSV không đúng định dạng mẫu của Map Generator!");
+                return;
+            }
+            
+            // Xử lý nạp dữ liệu từ chuỗi CSV thành Object
+            let parsedData = {
+                gridCols: parseInt(csvData.gridCols),
+                gridRows: parseInt(csvData.gridRows),
+                gridBox: {
+                    x: parseInt(csvData.boxX) || 40,
+                    y: parseInt(csvData.boxY) || 40,
+                    w: parseInt(csvData.boxW) || 250,
+                    h: parseInt(csvData.boxH) || 250
+                },
+                pixelGrid: JSON.parse(csvData.pixelGrid),
+                savedImageSrc: null // Google Sheet CSV không kèm ảnh lớn, chạy render thuần ô màu
+            };
+            
+            applyMapDataToWorkspace(parsedData);
+            alert("Import Map từ File CSV Google Sheet thành công!");
+            
+        } catch (err) {
+            alert("Lỗi phân tích cú pháp dữ liệu CSV! Hãy chắc chắn cột pixelGrid chứa chuỗi JSON mảng chuẩn.");
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+    this.value = "";
+};
+
+
+// EXPORT BACKUP FILE JSON 
+document.getElementById('exportDataBtn').onclick = function() {
+    if (!pixelGrid || pixelGrid.length === 0) { alert("Không có dữ liệu map!"); return; }
+    let payload = { gridCols: parseInt(gridColsInput.value), gridRows: parseInt(gridRowsInput.value), gridBox: gridBox, pixelGrid: pixelGrid };
+    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload));
+    let dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", `bead_map_${Date.now()}.json`); dl.click();
+};
+
+// IMPORT BACKUP FILE JSON
+document.getElementById('syncToSheetBtn').onclick = function() {
+    let libraryStr = localStorage.getItem('bead_maps_library');
+    
+    if (!libraryStr || libraryStr === "{}") { 
+        alert("Thư viện local trống, không có gì để sync!"); 
+        return; 
+    }
+    
+    // 🔗 ĐIỀN URL WEB APP MỚI CỦA BẠN VÀO ĐÂY
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbxm-pkOn85gmb3LXFEhwnEjI54pSvyN546dJeH2vpMn0yj89C-ERA1x3jPANLgbWlaAsQ/exec";
+    
+    if(webAppUrl.includes("XXXXX")) {
+        alert("Vui lòng cập nhật URL Web App Apps Script mới của bạn vào code!");
+        return;
+    }
+
+    this.innerText = "⏳ Đang sync dữ liệu thư viện...";
+    this.disabled = true;
+
+    // Sử dụng kĩ thuật ép kiểu dữ liệu text/plain kết hợp mode no-cors 
+    // Giúp đẩy chuỗi JSON siêu dài qua bộ lọc bảo mật của Google Script một cách an toàn
+    fetch(webAppUrl, {
+        method: "POST",
+        mode: "no-cors", 
+        headers: {
+            "Content-Type": "text/plain; charset=utf-8"
+        },
+        body: libraryStr // Gửi trực tiếp toàn bộ chuỗi Object thư viện bự
+    })
+    .then(() => {
+        // Ở chế độ no-cors, trình duyệt sẽ không đọc được chữ "Success" trả về, 
+        // nhưng lệnh gửi POST đi lên Google Sheet hoàn toàn thành công mà không bị chặn.
+        alert("Đã gửi lệnh đồng bộ thành công! Bạn mở tab Google Sheet lên xem dữ liệu mảng pixelGrid ở cột H đã đổ về đầy đủ chưa nhé. 🎉");
+    })
+    .catch(err => {
+        alert("Lỗi kết nối đồng bộ: " + err.message);
+        console.error(err);
+    })
+    .finally(() => {
+        this.innerText = "🔄 Đồng bộ (Sync) trực tiếp lên Google Sheet";
+        this.disabled = false;
+    });
+};
+
+// KHỞI CHẠY APP
+loadLibraryUI();
+</script>
+</body>
+</html>
