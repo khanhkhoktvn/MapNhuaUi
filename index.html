@@ -718,7 +718,47 @@ document.getElementById('exportDataBtn').onclick = function() {
     let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload));
     let dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", `bead_map_${Date.now()}.json`); dl.click();
 };
+// IMPORT FILE JSON LÊN
+document.getElementById('importFileLoader').onchange = function(e) {
+    let file = e.target.files[0];
+    if (!file) return;
 
+    let reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            let importedData = JSON.parse(event.target.result);
+            
+            if (!importedData.gridCols || !importedData.pixelGrid) {
+                alert("File JSON không đúng cấu trúc định dạng cấu hình map!");
+                return;
+            }
+
+            // Gán ngược dữ liệu vào form cấu hình
+            gridColsInput.value = importedData.gridCols;
+            gridRowsInput.value = importedData.gridRows;
+            gridBox = importedData.gridBox;
+            pixelGrid = importedData.pixelGrid;
+
+            // Đồng bộ ô input nhập số tay
+            updateInputsFromBox();
+            
+            // Vẽ lại khung định vị trên canvas ảnh gốc (nếu đã tải ảnh sẵn)
+            if (originalImage) {
+                drawInteractionGrid();
+            }
+
+            // Kết xuất lại map và bảng thống kê màu nhựa
+            renderOutputMap(importedData.gridCols, importedData.gridRows);
+            renderShoppingListTableBuild();
+            
+            alert("Đã khôi phục dữ liệu cấu hình và Pixel Map thành công!");
+        } catch (err) {
+            alert("Lỗi khi đọc file cấu hình JSON!");
+        }
+    };
+    reader.readAsText(file);
+    this.value = ""; // Clear để có thể import liên tục cùng file
+};
 // IMPORT BACKUP FILE JSON
 document.getElementById('syncToSheetBtn').onclick = function() {
     let libraryStr = localStorage.getItem('bead_maps_library');
