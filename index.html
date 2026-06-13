@@ -304,28 +304,161 @@
 
 <script>
 const BEAD_MAPPING_DICTIONARY = [
-    { code: "A4", hex: "#EAD67E" }, { code: "B3", hex: "#2E5E4E" }, { code: "C3", hex: "#6F9BB4" },
-    { code: "D9", hex: "#DFB6D5" }, { code: "E2", hex: "#EEA6BF" }, { code: "G1", hex: "#DDD7CE" },
-    { code: "B5", hex: "#4C8C57" }, { code: "C5", hex: "#1997AB" }, { code: "D6", hex: "#7E8CB4" },
-    { code: "E4", hex: "#EE8AA2" }, { code: "G5", hex: "#C79C81" }, { code: "A6", hex: "#E9B064" },
-    { code: "B8", hex: "#166442" }, { code: "C8", hex: "#006282" }, { code: "D7", hex: "#464A80" },
-    { code: "F5", hex: "#BF1120" }, { code: "G7", hex: "#AE7455" }, { code: "A7", hex: "#D68D50" },
-    { code: "H1", hex: "#1A1A1A" }, { code: "H2", hex: "#565656" }, { code: "H3", hex: "#979797" },
-    { code: "H4", hex: "#C2C2C2" }, { code: "H5", hex: "#E1E1E1" }, { code: "H7", hex: "#0D0D0D" },
-    { code: "F1", hex: "#E85C2B" }, { code: "F2", hex: "#E53929" }, { code: "F3", hex: "#BE1622" },
-    { code: "F4", hex: "#A6101E" }, { code: "F6", hex: "#85121B" }, { code: "F9", hex: "#F26E8C" },
-    { code: "E6", hex: "#E54F84" }, { code: "E9", hex: "#EE98BF" }, { code: "E10", hex: "#C63E7B" },
-    { code: "E12", hex: "#D51F5F" }, { code: "D5", hex: "#78448E" }, { code: "M5", hex: "#DDD6C7" },
-    { code: "M6", hex: "#C4BAAA" }, { code: "M9", hex: "#A89C89" }, { code: "M12", hex: "#7B6F5F" },
-    { code: "G6", hex: "#C37346" }, { code: "A9", hex: "#E09C2A" }, { code: "A12", hex: "#EAA83B" },
-    { code: "A8", hex: "#E4BA33" }, { code: "A5", hex: "#EFC83A" }, { code: "A15", hex: "#F3E246" },
-    { code: "B11", hex: "#234127" }, { code: "B4", hex: "#3A9F53" }, { code: "B2", hex: "#52B74B" },
-    { code: "B1", hex: "#88C542" }, { code: "B13", hex: "#A6D57A" }, { code: "A1", hex: "#D6E59A" },
-    { code: "B15", hex: "#196B3E" }, { code: "C15", hex: "#009193" }, { code: "B6", hex: "#35B38B" },
-    { code: "B16", hex: "#70C6A5" }, { code: "C1", hex: "#A6D5CD" }, { code: "H12", hex: "#D2E2DC" },
-    { code: "C9", hex: "#15335A" }, { code: "C17", hex: "#2E91C1" }, { code: "C4", hex: "#63B8DC" },
-    { code: "D1", hex: "#95B9DF" }, { code: "D17", hex: "#617CB4" }, { code: "C14", hex: "#A1C9D9" },
-    { code: "WHITE", hex: "#FFFFFF" }, { code: "BLACK", hex: "#000000" }
+    // ==========================================
+    // NHÓM 1: TONE VÔ SẮC (TRẮNG, ĐEN, XÁM) - 16 MÀU
+    // ==========================================
+    { code: "WHITE", hex: "#FFFFFF" }, 
+    { code: "BLACK", hex: "#000000" },
+    { code: "H1", hex: "#1A1A1A" }, 
+    { code: "H2", hex: "#565656" }, 
+    { code: "H3", hex: "#979797" },
+    { code: "H4", hex: "#C2C2C2" }, 
+    { code: "H5", hex: "#E1E1E1" }, 
+    { code: "H6", hex: "#1C2833" }, 
+    { code: "H7", hex: "#0D0D0D" }, 
+    { code: "H8", hex: "#2C3E50" }, 
+    { code: "H9", hex: "#34495E" }, 
+    { code: "H10", hex: "#7F8C8D" }, 
+    { code: "H11", hex: "#BDC3C7" }, 
+    { code: "H12", hex: "#D2E2DC" },
+    { code: "M1", hex: "#F4F6F7" }, 
+    { code: "M2", hex: "#D5DBDB" },
+
+    // ==========================================
+    // NHÓM 2: TONE VÀNG & CAM (DÒNG A) - 19 MÀU
+    // ==========================================
+    { code: "A1", hex: "#D6E59A" }, 
+    { code: "A2", hex: "#FCE57E" }, 
+    { code: "A3", hex: "#FAD02C" }, 
+    { code: "A4", hex: "#EAD67E" }, 
+    { code: "A5", hex: "#EFC83A" }, 
+    { code: "A6", hex: "#E9B064" }, 
+    { code: "A7", hex: "#D68D50" }, 
+    { code: "A8", hex: "#E4BA33" }, 
+    { code: "A9", hex: "#E09C2A" }, 
+    { code: "A10", hex: "#E08119" },
+    { code: "A11", hex: "#C65102" }, 
+    { code: "A12", hex: "#EAA83B" }, 
+    { code: "A13", hex: "#F3A152" }, 
+    { code: "A14", hex: "#F5C7A5" }, 
+    { code: "A15", hex: "#F3E246" }, 
+    { code: "A16", hex: "#FFF275" }, 
+    { code: "A17", hex: "#FFE600" }, 
+    { code: "A18", hex: "#D4A373" }, 
+    { code: "A19", hex: "#F4A261" },
+
+    // ==========================================
+    // NHÓM 3: TONE XANH LÁ CÂY (DÒNG B) - 17 MÀU
+    // ==========================================
+    { code: "B1", hex: "#88C542" }, 
+    { code: "B2", hex: "#52B74B" }, 
+    { code: "B3", hex: "#2E5E4E" }, 
+    { code: "B4", hex: "#3A9F53" }, 
+    { code: "B5", hex: "#4C8C57" }, 
+    { code: "B6", hex: "#35B38B" }, 
+    { code: "B7", hex: "#00A86B" }, 
+    { code: "B8", hex: "#166442" }, 
+    { code: "B9", hex: "#124E3F" }, 
+    { code: "B10", hex: "#0B3C26" },
+    { code: "B11", hex: "#234127" }, 
+    { code: "B12", hex: "#99E550" }, 
+    { code: "B13", hex: "#A6D57A" }, 
+    { code: "B14", hex: "#A3E4D7" }, 
+    { code: "B15", hex: "#196B3E" }, 
+    { code: "B16", hex: "#70C6A5" }, 
+    { code: "B17", hex: "#2ECC71" },
+
+    // ==========================================
+    // NHÓM 4: TONE XANH DƯƠNG & NGỌC (DÒNG C) - 18 MÀU
+    // ==========================================
+    { code: "C1", hex: "#A6D5CD" }, 
+    { code: "C2", hex: "#5DADE2" }, 
+    { code: "C3", hex: "#6F9BB4" }, 
+    { code: "C4", hex: "#63B8DC" }, 
+    { code: "C5", hex: "#1997AB" }, 
+    { code: "C6", hex: "#2471A3" }, 
+    { code: "C7", hex: "#1B4F72" }, 
+    { code: "C8", hex: "#006282" }, 
+    { code: "C9", hex: "#15335A" }, 
+    { code: "C10", hex: "#1F618D" },
+    { code: "C11", hex: "#2980B9" }, 
+    { code: "C12", hex: "#AED6F1" }, 
+    { code: "C13", hex: "#EBF5FB" }, 
+    { code: "C14", hex: "#A1C9D9" }, 
+    { code: "C15", hex: "#009193" }, 
+    { code: "C16", hex: "#0E6655" }, 
+    { code: "C17", hex: "#2E91C1" }, 
+    { code: "C18", hex: "#A9CCE3" },
+
+    // ==========================================
+    // NHÓM 5: TONE TÍM (DÒNG D) - 15 MÀU
+    // ==========================================
+    { code: "D1", hex: "#95B9DF" }, 
+    { code: "D2", hex: "#BB8FCE" }, 
+    { code: "D3", hex: "#8E44AD" }, 
+    { code: "D4", hex: "#6C3483" }, 
+    { code: "D5", hex: "#78448E" }, 
+    { code: "D6", hex: "#7E8CB4" }, 
+    { code: "D7", hex: "#464A80" }, 
+    { code: "D8", hex: "#4A235A" }, 
+    { code: "D9", hex: "#DFB6D5" }, 
+    { code: "D10", hex: "#EBDEF0" },
+    { code: "D11", hex: "#D4B2D8" }, 
+    { code: "D12", hex: "#A569BD" }, 
+    { code: "D13", hex: "#7D3C98" }, 
+    { code: "D17", hex: "#617CB4" },
+    { code: "M3", hex: "#A6ACAF" },
+
+    // ==========================================
+    // NHÓM 6: TONE HỒNG (DÒNG E) - 12 MÀU
+    // ==========================================
+    { code: "E1", hex: "#FADBD8" }, 
+    { code: "E2", hex: "#EEA6BF" }, 
+    { code: "E3", hex: "#F5B041" }, 
+    { code: "E4", hex: "#EE8AA2" }, 
+    { code: "E5", hex: "#EC7063" }, 
+    { code: "E6", hex: "#E54F84" }, 
+    { code: "E7", hex: "#CB4335" }, 
+    { code: "E8", hex: "#7B241C" }, 
+    { code: "E9", hex: "#EE98BF" }, 
+    { code: "E10", hex: "#C63E7B" },
+    { code: "E11", hex: "#FDEDEC" }, 
+    { code: "E12", hex: "#D51F5F" },
+
+    // ==========================================
+    // NHÓM 7: TONE ĐỎ & CAM CHÁY (DÒNG F) - 11 MÀU
+    // ==========================================
+    { code: "F1", hex: "#E85C2B" }, 
+    { code: "F2", hex: "#E53929" }, 
+    { code: "F3", hex: "#BE1622" }, 
+    { code: "F4", hex: "#A6101E" }, 
+    { code: "F5", hex: "#BF1120" }, 
+    { code: "F6", hex: "#85121B" }, 
+    { code: "F7", hex: "#641E16" }, 
+    { code: "F8", hex: "#E67E22" }, 
+    { code: "F9", hex: "#F26E8C" }, 
+    { code: "F10", hex: "#D35400" },
+    { code: "F11", hex: "#F5CBA7" },
+
+    // ==========================================
+    // NHÓM 8: TONE DA & NÂU ĐẤT (DÒNG G) - 8 MÀU
+    // ==========================================
+    { code: "G1", hex: "#DDD7CE" }, 
+    { code: "G2", hex: "#E59866" }, 
+    { code: "G3", hex: "#DC7633" }, 
+    { code: "G4", hex: "#BA4A00" }, 
+    { code: "G5", hex: "#C79C81" }, 
+    { code: "G6", hex: "#C37346" }, 
+    { code: "G7", hex: "#AE7455" }, 
+    { code: "G8", hex: "#873600" },
+
+    // ==========================================
+    // NHÓM 9: TONE TRUNG TÍNH ĐẶC BIỆT (DÒNG M) - 4 MÀU
+    // ==========================================
+    { code: "M5", hex: "#DDD6C7" }, 
+    { code: "M6", hex: "#C4BAAA" }, 
+    { code: "M9", hex: "#A89C89" }, 
+    { code: "M12", hex: "#7B6F5F" }
 ];
 
 let imgElement = document.getElementById('sourceImage');
